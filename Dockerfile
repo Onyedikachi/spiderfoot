@@ -40,8 +40,8 @@ RUN apk --update add --no-cache --virtual build-dependencies gcc git curl py2-pi
 USER spiderfoot
 WORKDIR /home/spiderfoot
 
-EXPOSE 5001
+EXPOSE 5000
 
 # Run the application.
 ENTRYPOINT ["/usr/bin/python"] 
-CMD ["./sf.py", "0.0.0.0:5001"]
+CMD ["./sf.py", "0.0.0.0:5000"]
