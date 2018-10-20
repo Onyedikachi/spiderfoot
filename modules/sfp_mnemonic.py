@@ -14,17 +14,18 @@
 import json
 import re
 import time
+import socket
 from sflib import SpiderFoot, SpiderFootPlugin, SpiderFootEvent
 
 class sfp_mnemonic(SpiderFootPlugin):
-    """Mnemonic PassiveDNS:Footprint,Investigate,Passive:Search Engines::Obtain Passive DNS information from PassiveDNS.mnemonic.no."""
+    """Mnemonic PassiveDNS:Footprint,Investigate,Passive:Passive DNS::Obtain Passive DNS information from PassiveDNS.mnemonic.no."""
 
     # Default options
     opts = {
         'limit': 1000,
         'timeout': 30,
         'maxage': 1095,   # 3 years
-        'verify': False,
+        'verify': True,
         'cohostsamedomain': False,
         'maxcohost': 100
     }
@@ -182,7 +183,7 @@ class sfp_mnemonic(SpiderFootPlugin):
 
         for co in cohosts:
             if eventName == "IP_ADDRESS" and (self.opts['verify'] and not self.validateIP(co, eventData)):
-                self.sf.debug("Host no longer resolves to " + eventData)
+                self.sf.debug("Host " + co + " no longer resolves to " + eventData)
                 continue
 
             if not self.opts['cohostsamedomain']:

@@ -34,10 +34,12 @@ class sfp_builtwith(SpiderFootPlugin):
     # or you run the risk of data persisting between scan runs.
 
     results = dict()
+    errorState = False
 
     def setup(self, sfc, userOpts=dict()):
         self.sf = sfc
         self.results = dict()
+        self.errorState = False
 
         # Clear / reset any other class member variables here
         # or you risk them persisting between threads.
@@ -51,7 +53,7 @@ class sfp_builtwith(SpiderFootPlugin):
 
     # What events this module produces
     def producedEvents(self):
-        return [ "INTERNET_NAME", "EMAILADDR", "HUMAN_NAME", 
+        return [ "INTERNET_NAME", "EMAILADDR", "RAW_RIR_DATA", 
                  "WEB_TECHNOLOGY", "PHONE_NUMBER" ]
 
     def query(self, t):
@@ -82,7 +84,15 @@ class sfp_builtwith(SpiderFootPlugin):
         srcModuleName = event.module
         eventData = event.data
 
+        if self.errorState:
+            return None
+
         self.sf.debug("Received event, " + eventName + ", from " + srcModuleName)
+
+        if self.opts['api_key'] == "":
+            self.sf.error("You enabled sfp_builtwith but did not set an API key!", False)
+            self.errorState = True
+            return None
 
        # Don't look up stuff twice
         if self.results.has_key(eventData):
@@ -98,7 +108,7 @@ class sfp_builtwith(SpiderFootPlugin):
         if "Meta" in data:
             if data['Meta'].get("Names", []):
                 for nb in data['Meta']['Names']:
-                    e = SpiderFootEvent("HUMAN_NAME", nb['Name'], 
+                    e = SpiderFootEvent("RAW_RIR_DATA", "Possible full name: " + nb['Name'], 
                                         self.__name__, event)
                     self.notifyListeners(e)
                     if nb.get('Email', None):

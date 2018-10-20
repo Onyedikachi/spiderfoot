@@ -32,10 +32,12 @@ class sfp_hunter(SpiderFootPlugin):
     # or you run the risk of data persisting between scan runs.
 
     results = dict()
+    errorState = False
 
     def setup(self, sfc, userOpts=dict()):
         self.sf = sfc
         self.results = dict()
+        self.errorState = False
 
         # Clear / reset any other class member variables here
         # or you risk them persisting between threads.
@@ -49,7 +51,7 @@ class sfp_hunter(SpiderFootPlugin):
 
     # What events this module produces
     def producedEvents(self):
-        return [ "EMAILADDR", "HUMAN_NAME" ]
+        return [ "EMAILADDR", "RAW_RIR_DATA" ]
 
     def query(self, t):
         ret = None
@@ -79,6 +81,9 @@ class sfp_hunter(SpiderFootPlugin):
         srcModuleName = event.module
         eventData = event.data
 
+        if self.errorState:
+            return None
+
         self.sf.debug("Received event, " + eventName + ", from " + srcModuleName)
 
        # Don't look up stuff twice
@@ -87,6 +92,11 @@ class sfp_hunter(SpiderFootPlugin):
             return None
         else:
             self.results[eventData] = True
+
+        if self.opts['api_key'] == "":
+            self.sf.error("You enabled sfp_hunter but did not set an API key!", False)
+            self.errorState = True
+            return None
 
         data = self.query(eventData)
         if data == None:
@@ -103,7 +113,8 @@ class sfp_hunter(SpiderFootPlugin):
             if 'first_name' in email and 'last_name' in email:
                 if email['first_name'] != None and email['last_name'] != None:
                     n = email['first_name'] + " " + email['last_name']
-                    e = SpiderFootEvent("HUMAN_NAME", n, self.__name__, event)
+                    e = SpiderFootEvent("RAW_RIR_DATA", "Possible full name: " + n, 
+                                        self.__name__, event)
                     self.notifyListeners(e)
 
 
